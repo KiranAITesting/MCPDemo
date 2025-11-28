@@ -11,6 +11,7 @@ A comprehensive end-to-end test automation framework for the Sauce Demo e-commer
 - **Multiple Test Suites** - Login, Products, Sort, and Shopping Cart scenarios
 - **Headed Mode by Default** - Visual test execution in Chromium
 - **Environment Variables** - Fallback configuration via .env file
+ - **MCP Integration** - Configured to integrate with Model Context Protocol (Playwright MCP) for external tooling and assistants to interact with the test runtime
 
 ## 📁 Project Structure
 ```
@@ -72,6 +73,8 @@ BASE_URL=https://www.saucedemo.com/
 USERNAME=standard_user
 PASSWORD=secret_sauce
 ```
+
+**Security note:** The repository no longer commits `.env`. Secrets should be stored in GitHub Actions Secrets (Settings → Secrets and variables → Actions) for CI runs. Rotate any secrets that were previously committed.
 
 ### Playwright Config
 - **Default Browser:** Chromium (headed mode)
@@ -152,6 +155,15 @@ Workflow summary:
 Notes:
 - The helper script expects the JSON file at `playwright-report/results.json` by default.
 - If your Playwright JSON layout differs, you can adjust `scripts/sendResultsToN8n.js`.
+
+Note: `npm run send:results` expects `N8N_WEBHOOK_URL` (or `--url`) and will error if not provided.
+
+Alternatively, a custom Playwright reporter (`reporters/slack-reporter.js`) posts a compact summary directly to Slack/Teams after each run:
+
+- **Slack notification:** configured via `SLACK_WEBHOOK_URL` (incoming webhook). The reporter will post a compact summary of results.
+- **Screenshot uploads:** optional and performed using `SLACK_BOT_TOKEN` (bot token). The bot must have the `files:write` OAuth scope to upload screenshots; without it uploads will fail with a `missing_scope` error.
+
+Store `SLACK_WEBHOOK_URL` and `SLACK_BOT_TOKEN` as GitHub Secrets for CI (`SLACK_WEBHOOK_URL`, `SLACK_BOT_TOKEN`). The CI workflow included at `.github/workflows/playwright-notify.yml` reads these secrets and runs tests.
 
 
 ## 📊 Test Scenarios
@@ -249,6 +261,14 @@ export class MyPage extends BasePage {
 ### Issue: Authentication fails
 **Solution:** Check credentials in `testdata/credentials.xlsx` or `.env` file.
 
+### Issue: Slack notifications not appearing
+**Checks:**
+- Confirm `SLACK_WEBHOOK_URL` is set for the environment where tests run (locally export or add to GitHub Secrets).
+- Verify the incoming webhook posts to the Slack channel you're watching (incoming webhooks are tied to a specific channel/workspace).
+- If you expect screenshots to be uploaded, ensure the Slack App bot token used for `SLACK_BOT_TOKEN` has the `files:write` OAuth scope and the app is reinstalled.
+
+To get more visibility in CI logs, enable debug logging in the reporter or add a small console/log write — the reporter prints errors but not successful webhook responses by default.
+
 ## 🤝 Contributing
 1. Create a new branch for your feature
 2. Follow the existing code structure and naming conventions
@@ -268,4 +288,4 @@ nk2
 
 ---
 
-**Last Updated:** November 26, 2025
+**Last Updated:** November 28, 2025
