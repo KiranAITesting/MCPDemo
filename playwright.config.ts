@@ -24,7 +24,11 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   
   /* Reporter to use */
-  reporter: 'html',
+  reporter: [
+    ['list'],
+    ['./reporters/slack-reporter.js', { slackWebhookUrl: process.env.SLACK_WEBHOOK_URL, teamsWebhookUrl: process.env.TEAMS_WEBHOOK_URL, slackBotToken: process.env.SLACK_BOT_TOKEN }],
+    ['html']
+  ],
   
   /* Shared settings for all the projects below */
   use: {

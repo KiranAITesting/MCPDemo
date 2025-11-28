@@ -23,12 +23,42 @@ if(!fs.existsSync(resultsFile)){
 }
 
 let data;
-try{
-  data = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
-}catch(e){
-  console.error('Error: failed to parse JSON from', resultsFile);
-  console.error(e.message);
-  process.exit(1);
+const raw = fs.readFileSync(resultsFile, 'utf8');
+try {
+  data = JSON.parse(raw);
+} catch (e) {
+  // Attempt to recover if the file contains leading/trailing log lines
+  // Find first JSON opening char and last closing char and try to parse that substring.
+  const firstBrace = raw.indexOf('{');
+  const firstBracket = raw.indexOf('[');
+  let start = -1;
+  if (firstBrace === -1) start = firstBracket;
+  else if (firstBracket === -1) start = firstBrace;
+  else start = Math.min(firstBrace, firstBracket);
+
+  const lastBrace = raw.lastIndexOf('}');
+  const lastBracket = raw.lastIndexOf(']');
+  let end = Math.max(lastBrace, lastBracket);
+
+  if (start !== -1 && end !== -1 && end > start) {
+    const candidate = raw.slice(start, end + 1);
+    try {
+      data = JSON.parse(candidate);
+      // save cleaned file for inspection
+      const cleanedPath = resultsFile.replace(/\.json$/, '') + '.clean.json';
+      try { fs.writeFileSync(cleanedPath, JSON.stringify(data, null, 2), 'utf8'); } catch (_) {}
+      console.warn('Warning: original results file contained non-JSON leading/trailing data. A cleaned copy was written to', cleanedPath);
+    } catch (e2) {
+      console.error('Error: failed to parse JSON from', resultsFile);
+      console.error('Original parse error:', e.message);
+      console.error('Attempted to parse candidate JSON substring but failed:', e2.message);
+      process.exit(1);
+    }
+  } else {
+    console.error('Error: failed to parse JSON from', resultsFile);
+    console.error('No JSON substring could be identified. Original parse error:', e.message);
+    process.exit(1);
+  }
 }
 
 function collectTestsFromSuite(suite){
