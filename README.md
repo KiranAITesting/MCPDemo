@@ -121,6 +121,39 @@ npm run test:debug
 npm run report
 ```
 
+## 🔁 Integrate Playwright results with Slack via n8n
+
+This project includes a small helper and an example n8n workflow to post Playwright JSON results to Slack.
+
+1. Generate a JSON test report:
+
+```bash
+# run tests and write JSON output
+npm run test:json
+```
+
+2. Send results to your n8n webhook (set `N8N_WEBHOOK_URL` or pass `--url`):
+
+```bash
+# using env var
+N8N_WEBHOOK_URL="https://<your-n8n-host>/webhook/playwright-results" npm run send:results
+
+# or pass as arg
+npm run send:results -- --url https://<your-n8n-host>/webhook/playwright-results
+```
+
+3. Import the included n8n workflow: `.n8n/workflows/playwright-to-slack.json` into your n8n instance.
+
+Workflow summary:
+- `Webhook` node: receives the POST from the helper script
+- `Format` function node: creates a short summary message
+- `Slack` node: posts the summary to a Slack channel (configure credentials in n8n)
+
+Notes:
+- The helper script expects the JSON file at `playwright-report/results.json` by default.
+- If your Playwright JSON layout differs, you can adjust `scripts/sendResultsToN8n.js`.
+
+
 ## 📊 Test Scenarios
 
 ### Login Tests (4 scenarios)

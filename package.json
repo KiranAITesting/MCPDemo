@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
+    "test:json": "npx playwright test --reporter=json > playwright-report/results.json",
+    "send:results": "node ./scripts/sendResultsToN8n.js",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
