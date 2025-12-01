@@ -3,7 +3,7 @@
     {
       "id": "playwright-local",
       "name": "Playwright MCP (local)",
-      "url": "http://localhost:9333",
+      "url": "http://localhost:9333/mcp",
       "description": "Local Playwright MCP server for test automation (start with `npm run mcp:start`).",
       "capabilities": ["playwright", "filesystem", "fetch", "memory", "git", "sqlite"],
       "manifest": {

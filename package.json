@@ -11,7 +11,7 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
-    "mcp:start": "npx @playwright/mcp start",
+    "mcp:start": "npx @playwright/mcp --port 9333",
     "mcp:version": "npx @playwright/mcp --version"
   },
   "keywords": [],
