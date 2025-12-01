@@ -24,6 +24,12 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Start Playwright MCP server
+        run: |
+          # start MCP in background so tests can connect; adjust sleep as needed
+          npm run mcp:start &
+          sleep 3
+
       - name: Run Playwright tests
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
