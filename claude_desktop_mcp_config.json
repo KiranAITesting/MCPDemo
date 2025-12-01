@@ -1,0 +1,18 @@
+{
+  "mcpServers": [
+    {
+      "id": "playwright-local",
+      "name": "Playwright MCP (local)",
+      "url": "http://localhost:9333",
+      "description": "Local Playwright MCP server for test automation (start with `npm run mcp:start`).",
+      "capabilities": ["playwright", "filesystem", "fetch", "memory", "git", "sqlite"],
+      "manifest": {
+        "packages": [
+          { "registry_name": "npm", "name": "@playwright/mcp", "version": "0.0.49" }
+        ]
+      },
+      "auth": null,
+      "tags": ["playwright", "local", "mcp"]
+    }
+  ]
+}
