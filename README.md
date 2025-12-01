@@ -269,6 +269,28 @@ export class MyPage extends BasePage {
 
 To get more visibility in CI logs, enable debug logging in the reporter or add a small console/log write — the reporter prints errors but not successful webhook responses by default.
 
+## 🧭 Import Claude Desktop MCP Config
+
+This repository includes a ready-to-import Claude Desktop MCP configuration file: `claude_desktop_mcp_config.json`.
+
+How to import into Claude Desktop:
+
+- Open Claude Desktop and go to Settings → MCP / Integrations (or the equivalent MCP configuration UI).
+- Choose the option to import or add a new MCP server and select `claude_desktop_mcp_config.json` from this repository.
+- The entry `Playwright MCP (local)` points to `http://localhost:9333` by default — start the MCP server locally using:
+```bash
+npm run mcp:start
+```
+- If your MCP server listens on a different port, edit `claude_desktop_mcp_config.json` and update the `url` field before importing.
+
+Verification:
+- After importing, Claude Desktop should list the server and indicate it is online when MCP is running.
+- Run a small MCP action from Claude (for example, ask it to run a Playwright command or list available capabilities) to confirm end-to-end connectivity.
+
+Security:
+- Only import local MCP configs that point to `localhost` unless you explicitly intend to expose the server.
+- Do not commit production secrets to the repo. Use local environment variables or secure stores.
+
 ## 🤝 Contributing
 1. Create a new branch for your feature
 2. Follow the existing code structure and naming conventions
