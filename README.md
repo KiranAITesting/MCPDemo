@@ -16,26 +16,53 @@ A comprehensive end-to-end test automation framework for the Sauce Demo e-commer
 ## 📁 Project Structure
 ```
 MCPServer/
-├── pages/                      # Page Object Models
+├── pages/                      # Page Object Models (UI)
 │   ├── BasePage.ts            # Base class with common methods
 │   ├── LoginPage.ts           # Login page object
 │   ├── ProductsPage.ts        # Products page object
 │   └── ShoppingCartPage.ts    # Shopping cart page object
+├── src/                        # API & Utilities
+│   ├── api/
+│   │   ├── models/            # API DTOs/Interfaces
+│   │   │   ├── auth.interface.ts
+│   │   │   └── booking.interface.ts
+│   │   └── services/          # API Service Classes
+│   │       ├── BaseApiService.ts
+│   │       ├── AuthService.ts
+│   │       └── BookingService.ts
+│   ├── data/
+│   │   ├── api-test-data.xlsx       # Sample Excel test data for API
+│   │   └── generate-api-test-data.ts # Excel generator (TypeScript)
+│   └── utils/
+│       └── excel-reader.ts   # Excel file reader utility
 ├── tests/                      # Test specifications
-│   ├── login.spec.ts          # Login test scenarios
-│   ├── products.spec.ts       # Products page validation tests
-│   ├── productsSort.spec.ts   # Product sorting tests
-│   └── shoppingCart.spec.ts   # Shopping cart scenarios
+│   ├── login.spec.ts          # Login test scenarios (UI)
+│   ├── products.spec.ts       # Products page validation (UI)
+│   ├── productsSort.spec.ts   # Product sorting (UI)
+│   ├── shoppingCart.spec.ts   # Shopping cart (UI)
+│   └── api/
+│       └── booking-e2e.spec.ts       # API data-driven tests (Restful Booker)
 ├── fixtures/                   # Custom test fixtures
 │   └── pageFixtures.ts        # Page object fixtures
-├── utils/                      # Utility classes
-│   └── excelReader.ts         # Excel file reader utility
 ├── testdata/                   # Test data files
 │   └── credentials.xlsx       # User credentials and URLs
+├── reporters/                  # Custom reporters
+│   └── slack-reporter.js      # Slack/Teams notification reporter
+├── scripts/                    # Utility scripts
+│   ├── sendResultsToN8n.js   # Send Playwright results to n8n
+│   ├── generate-api-data.js  # Generate sample API Excel data
+│   └── debug-auth.js          # Debug auth requests
+├── .github/workflows/          # GitHub Actions CI/CD
+│   ├── playwright-notify.yml  # UI tests + Slack notifications
+│   └── api-tests.yml          # API tests (separate job)
+├── .n8n/workflows/            # n8n workflow exports
+│   └── playwright-to-slack.json
 ├── playwright.config.ts        # Playwright configuration
 ├── tsconfig.json              # TypeScript configuration
 ├── package.json               # Dependencies and scripts
-└── .env                       # Environment variables (fallback)
+├── .env                       # Environment variables (local, ignored)
+├── claude_desktop_mcp_config.json  # Claude Desktop MCP config
+└── README.md                  # This file
 ```
 
 ## 🛠️ Prerequisites
@@ -72,6 +99,12 @@ Create or update `.env` file:
 BASE_URL=https://www.saucedemo.com/
 USERNAME=standard_user
 PASSWORD=secret_sauce
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+SLACK_BOT_TOKEN=xoxb-your-bot-token
+TEAMS_WEBHOOK_URL=https://outlook.webhook.office.com/...
+BOOKER_BASE_URL=https://restful-booker.herokuapp.com
+BOOKER_USER=admin
+BOOKER_PASS=password123
 ```
 
 **Security note:** The repository no longer commits `.env`. Secrets should be stored in GitHub Actions Secrets (Settings → Secrets and variables → Actions) for CI runs. Rotate any secrets that were previously committed.
@@ -269,6 +302,81 @@ export class MyPage extends BasePage {
 
 To get more visibility in CI logs, enable debug logging in the reporter or add a small console/log write — the reporter prints errors but not successful webhook responses by default.
 
+## 🔌 API Testing (Restful Booker)
+
+The framework includes a **Service Object Model** for data-driven API testing against the [Restful Booker API](https://restful-booker.herokuapp.com).
+
+### Running API Tests
+
+**Locally:**
+```bash
+# Generate sample Excel test data
+node scripts/generate-api-data.js
+
+# Run API tests
+npx playwright test api/booking-e2e.spec.ts
+```
+
+**In CI/CD:**
+```bash
+# GitHub Actions will automatically run API tests via .github/workflows/api-tests.yml
+# when you push to main or open a PR
+```
+
+### API Test Data
+
+Sample test data is stored in `src/data/api-test-data.xlsx`:
+- **Columns:** firstname, lastname, totalprice, depositpaid, checkin, checkout, additionalneeds
+- **Rows:** 2 sample bookings (John Doe, Alice Smith)
+- **Generated by:** `scripts/generate-api-data.js`
+
+To add more test data, edit the Excel file or update the script and regenerate.
+
+### API Architecture
+
+**Service Object Model Pattern:**
+- **BaseApiService** - Base class for all API services; wraps Playwright's `APIRequestContext`
+- **AuthService** - Handles authentication (`/auth` endpoint); returns session token
+- **BookingService** - CRUD operations for bookings (`/booking` endpoint)
+
+**Usage in Tests:**
+```typescript
+// tests/api/booking-e2e.spec.ts reads Excel data at module load
+// For each row, a dynamic test is created with steps:
+// 1. Authenticate (get token)
+// 2. Create booking
+// 3. Get booking (verify creation)
+// 4. Update booking (modify details)
+// 5. Delete booking (cleanup)
+
+test('Booking Flow - Row 1: John Doe', async ({ request }) => {
+  const authService = new AuthService(request);
+  const bookingService = new BookingService(request);
+  
+  const token = await authService.login({ username: '...', password: '...' });
+  const bookingId = await bookingService.create({ firstname: 'John', ... });
+  // ... continues with get, update, delete
+});
+```
+
+### Environment Variables for API Tests
+
+- `BOOKER_BASE_URL` - Restful Booker API base URL (default: `https://restful-booker.herokuapp.com`)
+- `BOOKER_USER` - Authentication username (optional; currently not used for Restful Booker auth)
+- `BOOKER_PASS` - Authentication password (optional; currently not used for Restful Booker auth)
+
+Example `.env`:
+```env
+BOOKER_BASE_URL=https://restful-booker.herokuapp.com
+```
+
+### Test Results
+
+All test runs generate Playwright reports in `playwright-report/`:
+- HTML report (open with browser)
+- JSON report (for CI integration)
+- GitHub Actions report (embedded in PR/commit)
+
 ## 🧭 Import Claude Desktop MCP Config
 
 This repository includes a ready-to-import Claude Desktop MCP configuration file: `claude_desktop_mcp_config.json`.
@@ -310,5 +418,5 @@ nk2
 
 ---
 
-**Last Updated:** November 28, 2025
+**Last Updated:** December 4, 2025
 # PlaywrightMCPUi
