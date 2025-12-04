@@ -1,26 +1,25 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
-import { readExcelAsJson } from '../../src/utils/excel-reader';
+import xlsx from 'xlsx';
 import { AuthService } from '../../src/api/services/AuthService';
 import { BookingService } from '../../src/api/services/BookingService';
 
 test.describe('Booking API E2E (data-driven)', () => {
-  let data: Array<any> = [];
 
-  test.beforeAll(async () => {
-    // ensure sample data exists (the generator script can be used manually). If file missing, throw helpful error
-    try{
-      const fp = path.join(process.cwd(), 'src', 'data', 'api-test-data.xlsx');
-      data = await readExcelAsJson(fp);
-    }catch(err){
-      throw new Error('Failed to read Excel test data. Run `node src/data/generate-api-test-data.ts` to create sample data.\n' + String(err));
-    }
-  });
+// Read Excel synchronously at module load so Playwright can discover tests.
+const dataFile = path.join(process.cwd(), 'src', 'data', 'api-test-data.xlsx');
+if (!require('fs').existsSync(dataFile)) {
+  throw new Error(`Missing test data file: ${dataFile}. Run \`node scripts/generate-api-data.js\` to generate it.`);
+}
+const workbook = xlsx.readFile(dataFile);
+const sheet = workbook.Sheets[workbook.SheetNames[0]];
+const data: Array<any> = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
   for(const row of data){
     test(`booking flow for ${row.firstname} ${row.lastname}`, async ({ request: apiRequest }) => {
-      const authService = new AuthService(apiRequest);
-      const bookingService = new BookingService(apiRequest);
+      const baseApiUrl = process.env.BOOKER_BASE_URL || 'https://restful-booker.herokuapp.com';
+      const authService = new AuthService(apiRequest, baseApiUrl);
+      const bookingService = new BookingService(apiRequest, baseApiUrl);
 
       let token: string | undefined;
       let bookingId: number | undefined;

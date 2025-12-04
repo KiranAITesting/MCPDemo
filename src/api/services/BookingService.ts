@@ -8,7 +8,7 @@ export class BookingService extends BaseApiService {
   }
 
   async create(booking: BookingRequest): Promise<{bookingid:number, booking:any}> {
-    const res = await this.request.post(this.url('/booking'), { data: booking });
+    const res = await this.request.post(this.url('/booking'), { data: JSON.stringify(booking), headers: { 'Content-Type': 'application/json' } });
     const body = await res.json();
     return body;
   }
@@ -21,7 +21,7 @@ export class BookingService extends BaseApiService {
   async update(bookingId: number, booking: BookingRequest, token?: string){
     const headers: Record<string,string> = {};
     if(token) headers['Cookie'] = `token=${token}`;
-    const res = await this.request.put(this.url(`/booking/${bookingId}`), { data: booking, headers });
+    const res = await this.request.put(this.url(`/booking/${bookingId}`), { data: JSON.stringify(booking), headers: { ...headers, 'Content-Type': 'application/json' } });
     return res;
   }
 
