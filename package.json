@@ -11,6 +11,7 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
+    "test:slack": "node ./scripts/test-slack-webhook.js",
     "mcp:start": "npx @playwright/mcp --port 9333",
     "mcp:version": "npx @playwright/mcp --version"
   },
